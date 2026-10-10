@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pack Checker for Minecraft Bedrock | MintServers</title>
+<meta name="description" content="Drop in a Minecraft pack file and find out if it works on your Bedrock server, which folder it goes in, and the exact text to paste into your world file. Free, runs in your browser.">
+<meta property="og:title" content="Will this pack work on your Bedrock server?">
+<meta property="og:description" content="Free Pack Checker from MintServers. Checks if a pack is Bedrock or Java and tells you where it goes.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0c1425;
+    --panel: #131d36;
+    --line: #2a3a60;
+    --chalk: #eaf0fb;
+    --muted: #9aa9c6;
+    --mint: #3ddc97;
+    --sky: #7db4ff;
+    --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+    --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--chalk);
+    font-family: var(--body);
+    font-size: 18px;
+    line-height: 1.65;
+  }
+  a { color: var(--sky); text-underline-offset: 3px; }
+  a:hover { color: var(--chalk); }
+  a:focus-visible, summary:focus-visible { outline: 3px solid var(--mint); outline-offset: 3px; border-radius: 2px; }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+
+  header.top { padding: 22px 0; }
+  header.top .wrap { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .brand { font-family: var(--display); font-weight: 700; font-size: 1.15rem; color: var(--chalk); text-decoration: none; display: inline-flex; align-items: center; gap: 10px; }
+  .brand::before { content: ""; width: 14px; height: 14px; background: var(--mint); box-shadow: 4px 4px 0 var(--line); }
+  .nav a { font-size: 0.95rem; }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(2.3rem, 7vw, 3.9rem);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin: 36px 0 18px;
+    max-width: 13em;
+  }
+  .lede { color: var(--muted); max-width: 34em; margin: 0 0 34px; }
+
+  /* The checker sits on a block with stepped corners, like a placed cube */
+  .bench {
+    background: var(--panel);
+    clip-path: polygon(
+      0 14px, 7px 14px, 7px 7px, 14px 7px, 14px 0,
+      calc(100% - 14px) 0, calc(100% - 14px) 7px, calc(100% - 7px) 7px, calc(100% - 7px) 14px, 100% 14px,
+      100% calc(100% - 14px), calc(100% - 7px) calc(100% - 14px), calc(100% - 7px) calc(100% - 7px), calc(100% - 14px) calc(100% - 7px), calc(100% - 14px) 100%,
+      14px 100%, 14px calc(100% - 7px), 7px calc(100% - 7px), 7px calc(100% - 14px), 0 calc(100% - 14px)
+    );
+  }
+  #mint-pack-checker { padding: 30px 28px 26px; }
+  #mint-pack-checker label:focus-within { outline: 3px solid var(--mint); outline-offset: 3px; }
+  #mint-pack-checker label:hover { background-color: rgba(125, 180, 255, 0.1) !important; }
+
+  main section { margin-top: 64px; }
+  h2 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 1.2; letter-spacing: -0.01em; margin: 0 0 18px; }
+
+  dl.checks { margin: 0; border-top: 1px solid var(--line); }
+  dl.checks div { display: grid; grid-template-columns: 11rem 1fr; gap: 6px 28px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  dl.checks dt { font-weight: 700; color: var(--mint); }
+  dl.checks dd { margin: 0; color: var(--chalk); }
+  dl.checks code, .faq code { font-family: Consolas, Monaco, "Courier New", monospace; font-size: 0.88em; background: rgba(125, 180, 255, 0.12); padding: 1px 6px; }
+
+  .private { border-left: 4px solid var(--mint); padding: 4px 0 4px 20px; max-width: 36em; }
+  .private p { margin: 0; }
+
+  .faq { border-top: 1px solid var(--line); }
+  .faq details { border-bottom: 1px solid var(--line); padding: 16px 0; }
+  .faq summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; color: var(--mint); font-size: 1.3em; line-height: 1; }
+  .faq details[open] summary::after { content: "\2212"; }
+  .faq details p { margin: 12px 0 0; color: var(--muted); max-width: 38em; }
+
+  footer { margin-top: 80px; padding: 28px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.95rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 28px; justify-content: space-between; }
+
+  @media (max-width: 620px) {
+    body { font-size: 17px; }
+    #mint-pack-checker { padding: 24px 16px 20px; }
+    dl.checks div { grid-template-columns: 1fr; gap: 2px; }
+    main section { margin-top: 52px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="https://mintservers.com">MintServers</a>
+    <nav class="nav"><a href="https://mintservers.com/knowledgebase">Knowledgebase</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Will this pack work on your Bedrock server?</h1>
+  <p class="lede">Drop in the file you downloaded. We tell you if it is made for Bedrock or Java, which folder it goes in, and the exact text to paste into your world file.</p>
+
+  <div class="bench">
+    <div id="mint-pack-checker">
+      <p style="margin:0;color:#e5e7eb;line-height:1.6;">The Pack Checker needs JavaScript to run. Turn it on in your browser, or follow the manual steps in our <a href="https://mintservers.com/knowledgebase/install-bedrock-behavior-texture-packs">install guide</a>.</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>What it tells you</h2>
+    <dl class="checks">
+      <div><dt>Bedrock or Java</dt><dd>Java packs, mods and plugins do not run on Bedrock servers. You find out before you upload anything.</dd></div>
+      <div><dt>Pack type</dt><dd>Behavior packs go in <code>behavior_packs</code>, resource (texture) packs go in <code>resource_packs</code>. Addon bundles with both are split up for you.</dd></div>
+      <div><dt>Upload folder</dt><dd>Which folder inside the download to take, or what to name a new one when the pack has none.</dd></div>
+      <div><dt>World file entry</dt><dd>The pack ID and version for <code>world_behavior_packs.json</code> or <code>world_resource_packs.json</code>, ready to copy.</dd></div>
+      <div><dt>Missing pieces</dt><dd>A warning when a pack needs another pack that is not in your file.</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Your file stays on your computer</h2>
+    <div class="private">
+      <p>The check runs inside your browser. Your file is never uploaded to MintServers or anywhere else.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Questions</h2>
+    <div class="faq">
+      <details>
+        <summary>Which files can I check?</summary>
+        <p>Files ending in <code>.mcpack</code>, <code>.mcaddon</code> or <code>.zip</code>. You can also drop in a <code>.jar</code> to confirm it is a Java mod or plugin. If your download is a <code>.rar</code> or <code>.7z</code>, extract it on your computer first and check the file inside.</p>
+      </details>
+      <details>
+        <summary>It says my pack is for Java. What now?</summary>
+        <p>Look for the Bedrock version of the same pack. On MCPEDL it is usually a <code>.mcpack</code> or <code>.mcaddon</code> file. You can also browse ready-made packs in the Bedrock Addons tab of your MintServers panel.</p>
+      </details>
+      <details>
+        <summary>What do I do after the check?</summary>
+        <p>Follow the steps it shows you. For the full walkthrough with screenshots, read the <a href="https://mintservers.com/knowledgebase/install-bedrock-behavior-texture-packs">install guide</a>.</p>
+      </details>
+      <details>
+        <summary>It could not read my file, or the result looks wrong.</summary>
+        <p>Download the pack again in case the first download was cut off. If it still fails, open a support ticket from your MintServers account and attach the file. Our team will take a look.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Free tool by <a href="https://mintservers.com">MintServers</a></span>
+    <a href="https://mintservers.com/knowledgebase/install-bedrock-behavior-texture-packs">Back to the install guide</a>
+  </div>
+</footer>
+
+<script src="pack-checker.js"></script>
+</body>
+</html>
